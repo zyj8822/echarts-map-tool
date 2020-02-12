@@ -20,7 +20,7 @@ function makeRequestUrl (obj, type) {
         paramStr += (paramStr ? '&' : '?') + name + '=' + encodeURIComponent(obj[name]);
     }
     paramStr += '&key=' + API_KEY + '&output=json';
-    // console.log(API_BASE + type + paramStr);
+    console.log(API_BASE + type + paramStr);
     return API_BASE + type + paramStr;
 }
 

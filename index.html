@@ -32,16 +32,8 @@
         </div>
     </div><!-- end of navbar -->
     <div class="container" id="main">
-        <h1>ECharts 地图数据在线生成工具</h1>
-        <div style="text-align: left; min-height: 30px; margin-top: 30px; margin-left: 0; padding-left: 0"
-            class="page-content container">
-            <p style="padding-left: 0">ECharts 之前提供下载的矢量地图数据来自第三方，由于部分数据不符合国家《测绘法》规定，目前暂时停止下载服务。</p>
-            <p style="padding-left: 0">建议大家使用以百度地图为底图的形式，参考实例：<a
-                    href="http://echarts.baidu.com/demo.html#map-polygon">http://echarts.baidu.com/demo.html#map-polygon</a>
-            </p>
-        </div>
         <div class="row">
-            <div id="configuration" class="col-sm-8">
+            <div id="configuration" class="col-sm-4">
                 <section id="range">
                     <h3>范围<span> range</span></h3>
                     <p>
@@ -79,21 +71,13 @@
                     </p>
                 </section>
 
-                <section id="compress">
-                    <h3>是否压缩<span> compress</span></h3>
-                    <p>
-                        <input type="checkbox" name="compress" value="isCompressed" id="isCompressed" checked>
-                        <label for="isCompressed">压缩版本</label>
-                        <p class="desc">压缩后体积占用更小, 地图精度不变, 但是只能使用 UTF-8 编码</p>
-                    </p>
-                </section>
-               
                 <div id="action">
                     <button id="buildJs" class="btn btn-primary">生成 JS</button>
                     <button id="buildJson" class="btn btn-primary">生成 JSON</button>
+                    <button id="startDownJSON" class="btn btn-primary">下载省JSON</button>
                 </div>
             </div>
-            <div class="col-sm-4">
+            <div class="col-sm-8">
                 <section id="preview">
                     <h3>预览<span> preview</span></h3>
                     <div id="preview-viewport"></div>
@@ -127,11 +111,6 @@
         // 保存文件的名称
         var fileStr = '';
 
-        // -- 初始化:直辖市,行政区 --
-
-        var CENTRAL_CITIES = ['北京市市辖区', '上海市市辖区', '天津市市辖区', '重庆市市辖区'];
-        var AOMEN_AND_HK = ['香港特别行政区', '澳门特别行政区'];
-        var TAIWAN = ['台湾省'];
         var NO_COUNTY = ['东莞市', '中山市', '三沙市', '儋州市', '嘉峪关市'];
 
         // 是否是直辖市
@@ -142,38 +121,6 @@
 
         // 是否是台湾
         var isTaiwan = false;
-
-        var centralCity = [
-            {
-                name: '北京市市辖区',
-                code: '010'
-            },
-            {
-                name: '天津市市辖区',
-                code: '022'
-            },
-            {
-                name: '上海市市辖区',
-                code: '021'
-            },
-            {
-                name: '重庆市市辖区',
-                code: '023'
-            },
-            {
-                name: '香港特别行政区',
-                code: '1852'
-            },
-            {
-                name: '澳门特别行政区',
-                code: '1853'
-            },
-            {
-                name: '台湾省',
-                code: '710000'
-            }
-        ];
-
 
         // -- 初始化下拉列表 --
 
@@ -186,12 +133,6 @@
 
         var content = INIT_PROVINCE_CONTENT;
 
-        // 直辖市
-        centralCity =[];
-        for (var c = 0, cl = centralCity.length - 3; c < cl; c++) {
-        //    content += '<option value="city|' + centralCity[c].code + '">' + centralCity[c].name + '</option>';
-        }
-
         // 省,自治区
         provinceList.push("北京市");
         provinceList.push("上海市");
@@ -200,14 +141,9 @@
         provinceList.push("香港");
         provinceList.push("澳门");
         provinceList.push("台湾省");
-        
+
         for (var i = 0, l = provinceList.length; i < l; i++) {
             content += '<option value="province">' + provinceList[i] + '</option>';
-        }
-
-        // 行政区,台湾
-        for (var cc = centralCity.length - 3, ccl = centralCity.length; cc < ccl; cc++) {
-        //    content += '<option value="city|' + centralCity[cc].code + '">' + centralCity[cc].name + '</option>';
         }
 
         $('#province').html(content);
@@ -229,6 +165,7 @@
         function updateAndFetch(cb) {
             // 选中的范围
             var selectProvince = $('#province').find("option:selected");
+
             var selectCity = $('#city').find("option:selected");
             var selectDistrict = $('#district').find("option:selected");
 
@@ -240,9 +177,6 @@
             // 是否仅有轮廓
             var isOnlyOutline = $("input[name='type']:checked").val() == 'outline' ? true : false;
 
-            // 是否需要压缩
-            var isCompressed = $("#isCompressed").is(':checked');
-
             // 地图范围等级: 3-中国, 2-省(直辖市,行政区) 1-市, 0-地区
             var getType = 0;
 
@@ -253,7 +187,6 @@
                 } else {
                     getType = 0;
                 }
-
                 // 普通省市
             } else {
                 if (selectProvince.text() == trimProvince) {
@@ -271,22 +204,22 @@
             switch (getType) {
                 case 3:
                     fileStr = '中国';
-                    fetchGeoJson('中国', isOnlyOutline, isCompressed, cb);
+                    fetchGeoJson('中国', isOnlyOutline, false, cb);
                     getType = 0;
                     break;
                 case 2:
                     fileStr = selectProvince.text();
-                    fetchGeoJson(selectProvince, isOnlyOutline, isCompressed, cb);
+                    fetchGeoJson(selectProvince, isOnlyOutline, false, cb);
                     getType = 0;
                     break;
                 case 1:
                     fileStr = selectCity.text();
-                    fetchGeoJson(selectCity, isOnlyOutline, isCompressed, cb);
+                    fetchGeoJson(selectCity, isOnlyOutline, false, cb);
                     getType = 0;
                     break;
                 case 0:
                     fileStr = selectDistrict.text();
-                    fetchGeoJson(selectDistrict, true, isCompressed, cb);
+                    fetchGeoJson(selectDistrict, true, false, cb);
                     getType = 0;
                     break;
                 default:
@@ -299,41 +232,27 @@
         // -- dom事件绑定 --
 
         $('#type input').change(function () {
-
             // 更新预览
             updateAndFetch(preview);
         });
 
         // 绑定生成按钮点击事件，触发生成地图数据并下载
         $('#buildJson').click(downloadJson);
-        $('#buildJs').click(downloadJs);
 
         function downloadJson() {
-            if (INIT_PROVINCE_CONTENT.indexOf($('#province').val()) > -1) {
-            //    return;
-            }
             updateAndFetch(function (geoJson) {
                 downloadGeoJson(geoJson);
             });
         }
 
-        function downloadJs() {
-            if (INIT_PROVINCE_CONTENT.indexOf($('#province').val()) > -1) {
-                return;
-            }
-            updateAndFetch(function (geoJson) {
-                downloadGeoJs(geoJson, $('#mapName').val());
-            });
-        }
-
         // 监听省级下拉列表变化
         $('#province').change(provinceSelectCallback);
+
         function provinceSelectCallback() {
 
             $('#city').removeAttr("disabled");
             $('#district').removeAttr("disabled");
             $('#outlineAndPartition').removeAttr("disabled");
-
             var arrTemp = $(this).val().split('|');
             // 行政级别
             var level = arrTemp[0];
@@ -343,13 +262,13 @@
             var keyword = $(this).find("option:selected").text();
 
             // 判断是否是直辖市
-            isCentralCity = isSpecialCity(keyword, CENTRAL_CITIES);
+            isCentralCity = false;
 
             // 判断是否是香港澳门
-            isAomenOrHK = isSpecialCity(keyword, AOMEN_AND_HK);
+            isAomenOrHK = false;
 
             // 判断是否是台湾
-            isTaiwan = false;isSpecialCity(keyword, TAIWAN);
+            isTaiwan = false; //isSpecialCity(keyword, TAIWAN);
 
             // 直辖市和行政区时，禁用市级下拉列表
             if (isAomenOrHK || isCentralCity) {
@@ -362,15 +281,6 @@
                 $('#district').html(INIT_DISTRICT_CONTENT);
             }
 
-            // 台湾时，禁用市级，县级下拉列表，只能选择外部轮廓
-            if (isTaiwan) {
-                $('#city').html(INIT_CITY_CONTENT);
-                $('#city').prop("disabled", true);
-                $('#district').html(INIT_DISTRICT_CONTENT);
-                $('#district').prop("disabled", true);
-                $('#outline').prop("checked", true);
-                $('#outlineAndPartition').prop("disabled", true);
-            }
 
             var trimProvince = INIT_PROVINCE_CONTENT.replace(/<option>(.*?)<\/option>/g, "$1");
 
@@ -408,10 +318,6 @@
                 // $('#outlineAndPartition').prop("disabled", true);
             }
 
-            // $('#city').removeAttr("disabled");
-            // $('#district').removeAttr("disabled");
-            // $('#outlineAndPartition').removeAttr("disabled");
-
             var arrTemp = $(this).val().split('|');
 
             //行政级别
@@ -443,10 +349,8 @@
         function districtSelectCallback() {
 
             $('#outline').prop("checked", true);
-            // $('#outlineAndPartition').prop("disabled", true);
 
             var trimDistrict = INIT_DISTRICT_CONTENT.replace(/<option>(.*?)<\/option>/g, "$1");
-
 
             var arrTemp = $(this).val().split('|');
 
@@ -459,7 +363,6 @@
             if (keyword == trimDistrict) {
                 $('#outlineAndPartition').removeAttr('disabled');
             }
-
 
             //行政区级别
             district.setLevel(level);
@@ -483,7 +386,6 @@
             }
             return isSpecial;
         }
-
 
         // 动态加载下拉列表
         function getData(e) {
@@ -529,6 +431,13 @@
 
         var myChart;
         function preview(data) {
+
+            if (downindex > 0) {
+                downloadGeoJson(data);
+                downindex++;
+                set_select_checked();
+            }
+
             if (myChart) {
                 myChart.dispose();
             }
@@ -565,25 +474,29 @@
             });
         }
 
-    // //
-    // function search(obj) {
+        $('#province').change();
 
-    //     var option = obj[obj.options.selectedIndex];
-    //     var arrTemp = option.value.split('|');
+        function set_select_checked() {
+            if (downindex > provinceList.length) {
+                return;
+            }
+            let checkValue = provinceList[downindex - 1];
+            var select = document.getElementById("province");
+            console.log(checkValue + provinceList.length + " : " + downindex);
+            for (var i = 0; i < select.options.length; i++) {
+                if (select.options[i].text == checkValue) {
+                    select.options[i].selected = true;
+                    break;
+                }
+            }
+            $('#province').change();
+        }
 
-    //     var level = arrTemp[0];//行政级别
-    //     citycode = arrTemp[1];// 城市编码
-    //     var keyword = option.text; //关键字
-
-    //     district.setLevel(level); //行政区级别
-    //     //行政区查询
-    //     district.search(keyword, function(status, result){
-    //         getData(result);
-    //     });
-    // }
-
+        $('#startDownJSON').click(startDownJSON);
+        var downindex = 0;
+        function startDownJSON() {
+            downindex = 1;
+            set_select_checked();
+        }
     </script>
-
 </body>
-
-<body>

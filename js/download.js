@@ -1,7 +1,7 @@
 //geojson对象
 function Geojson() {
-    this.type  = "FeatureCollection";
-    this.features =[];
+    this.type = "FeatureCollection";
+    this.features = [];
 }
 
 //feature对象
@@ -9,13 +9,13 @@ function Feature() {
     this.type = "Feature";
     this.id = '';
     this.properties = {
-        "name" : '',
-        "cp" : [],
-        "childNum" : 1
+        "name": '',
+        "cp": [],
+        "childNum": 1
     };
     this.geometry = {
-        "type" : "Polygon",
-        "coordinates" : []
+        "type": "Polygon",
+        "coordinates": []
     };
 }
 
@@ -30,21 +30,16 @@ function fetchGeoJson(range, isOnlyOutline, isCompressed, cb) {
     if (range == '中国') {
         level = 'country';
         keyword = '中国';
-
-    }
-    else {
-
+    } else {
         arrTemp = range.val().split('|');
         level = arrTemp[0];//行政级别
         citycode = arrTemp[1];// 城市编码
         keyword = range.text(); //关键字
-
     }
 
     if (isOnlyOutline) {
         district.setSubdistrict(0);
-    }
-    else {
+    } else {
         district.setSubdistrict(1);
     }
 
@@ -52,12 +47,12 @@ function fetchGeoJson(range, isOnlyOutline, isCompressed, cb) {
     district.setLevel(level);
 
 
-    if(isCentralCity && isOnlyOutline && level == 'city') {
-        keyword = keyword.substring(0, keyword.length-3);
+    if (isCentralCity && isOnlyOutline && level == 'city') {
+        keyword = keyword.substring(0, keyword.length - 3);
     }
 
     //行政区查询
-    district.search(keyword, function(status, result){
+    district.search(keyword, function (status, result) {
 
         if (status === 'no_data') {
             cb();
@@ -65,8 +60,7 @@ function fetchGeoJson(range, isOnlyOutline, isCompressed, cb) {
         }
         if (isOnlyOutline) {
             createOutlineGeojson(result.districtList, isCompressed, cb);
-        }
-        else {
+        } else {
             if (result.districtList[0].districtList) {
                 createDetailedGeojson(result.districtList, isCompressed, cb);
             } else {
@@ -90,19 +84,13 @@ function createOutlineGeojson(list, isCompressed, cb) {
 
     //获取市以及市下面的地区
     var feature;
-    if(level === 'district') {
+    if (level === 'district') {
         feature = createDistFeature(list, citycode);
     } else {
         feature = createFeature(data);
     }
     features.push(feature);
-
-    if (isCompressed) {
-        geojson = compress(geojson);
-    }
-
     cb(geojson);
-
     district.setSubdistrict(1);
 }
 
@@ -120,13 +108,13 @@ function createDetailedGeojson(list, isCompressed, cb) {
     var reqCount = 0;
 
     //// 考虑区县同名问题,分为两种情况: 获取市以及市下属区县; 其他
-    if(cityCode.length) {
-        for(var m = 0, mlength = dList.length; m < mlength; m++) {
+    if (cityCode.length) {
+        for (var m = 0, mlength = dList.length; m < mlength; m++) {
 
             var keyword = dList[m].name;
             reqCount++;
 
-            district.search(keyword, function(status, result){
+            district.search(keyword, function (status, result) {
                 reqCount--;
                 var subDistrictList = result.districtList;
                 var feature = createDistFeatures(subDistrictList, citycode);
@@ -136,9 +124,7 @@ function createDetailedGeojson(list, isCompressed, cb) {
                 }
 
                 if (reqCount === 0) {
-                    if (isCompressed) {
-                        geojson = compress(geojson);
-                    }
+
                     cb(geojson);
 
                     district.setSubdistrict(1);
@@ -147,19 +133,19 @@ function createDetailedGeojson(list, isCompressed, cb) {
         }
 
     } else {
-        for(var m = 0, mlength = dList.length; m < mlength; m++) {
+        for (var m = 0, mlength = dList.length; m < mlength; m++) {
 
             var keyword = dList[m].name;
             reqCount++;
 
-            district.search(keyword, function(status, result){
+            district.search(keyword, function (status, result) {
                 reqCount--;
                 var subDistrictList = result.districtList;
                 var feature = createFeatures(subDistrictList);
                 features.push(feature);
 
                 if (reqCount === 0) {
-                    geojson = compress(geojson);
+
                     cb(geojson);
 
                     district.setSubdistrict(1);
@@ -171,7 +157,7 @@ function createDetailedGeojson(list, isCompressed, cb) {
 
 
 // 生成单一轮廓（包括国家，省，市）
-function createFeature (district) {
+function createFeature(district) {
 
     // 实例化feature，对于仅有轮廓的地图数据，features数组仅有的一项
     var feature = new Feature();
@@ -183,7 +169,7 @@ function createFeature (district) {
     feature.properties.name = district.name;
     feature.properties.childNum = district.boundaries.length;
 
-    if(feature.properties.childNum > 1) {
+    if (feature.properties.childNum > 1) {
         feature.geometry.type = "MultiPolygon";
     }
 
@@ -198,7 +184,7 @@ function createFeature (district) {
 }
 
 // 生成单一区县轮廓
-function createDistFeature (districtList, citycode) {
+function createDistFeature(districtList, citycode) {
 
     // 实例化feature，对于仅有轮廓的地图数据，features数组仅有的一项
     var feature = new Feature();
@@ -206,16 +192,16 @@ function createDistFeature (districtList, citycode) {
     var cp = [];
     var coordinatesSet = [];
 
-    for (var t = 0, tlength =  districtList.length; t < tlength; t++) {
+    for (var t = 0, tlength = districtList.length; t < tlength; t++) {
 
         var district = districtList[t];
 
-        if(district.citycode == citycode) {
+        if (district.citycode == citycode) {
             feature.id = district.adcode;
             feature.properties.name = district.name;
             feature.properties.childNum = district.boundaries.length;
 
-            if(feature.properties.childNum > 1) {
+            if (feature.properties.childNum > 1) {
                 feature.geometry.type = "MultiPolygon";
             }
 
@@ -227,13 +213,11 @@ function createDistFeature (districtList, citycode) {
             feature.geometry.coordinates = coordinatesSet;
             return feature;
         }
-
     }
-
 }
 
 // 生成某区域（国家，省）的内部子区域
-function createFeatures (districtList) {
+function createFeatures(districtList) {
 
     var feature = new Feature();
     var cp = [];
@@ -245,7 +229,7 @@ function createFeatures (districtList) {
         feature.properties.name = district.name;
         feature.properties.childNum = district.boundaries.length;
 
-        if(feature.properties.childNum > 1) {
+        if (feature.properties.childNum > 1) {
             feature.geometry.type = "MultiPolygon";
         }
 
@@ -274,7 +258,7 @@ function createDistFeatures(districtList, citycode) {
             feature.properties.name = district.name;
             feature.properties.childNum = district.boundaries.length;
 
-            if(feature.properties.childNum > 1) {
+            if (feature.properties.childNum > 1) {
                 feature.geometry.type = "MultiPolygon";
             }
 
@@ -293,7 +277,7 @@ function createDistFeatures(districtList, citycode) {
 }
 
 // 生成区域坐标点集
-function getCoo (obj, coo) {
+function getCoo(obj, coo) {
     var point = [];
     var cooItem = [];
     var cooSet = [];
@@ -310,7 +294,7 @@ function getCoo (obj, coo) {
         }
         coo.push(cooItem);
 
-    // feature为MultiPolygon
+        // feature为MultiPolygon
     } else {
         for (var p = 0; p < plength; p++) {
             var boundary = obj.boundaries[p];
@@ -347,26 +331,26 @@ function downloadGeoJs(geojson, mapName) {
 
     var str = "(function (root, factory) {"
         + "if (typeof define === 'function' && define.amd) {"
-        +     "define(['exports', 'echarts'], factory);"
+        + "define(['exports', 'echarts'], factory);"
         + "} else if (typeof exports === 'object' "
         + "&& typeof exports.nodeName !== 'string') {"
-        +     "factory(exports, require('echarts'));"
+        + "factory(exports, require('echarts'));"
         + "} else {"
-        +     "factory({}, root.echarts);"
+        + "factory({}, root.echarts);"
         + "}"
         + "}(this, function (exports, echarts) {"
         + "var log = function (msg) {"
-        +     "if (typeof console !== 'undefined') {"
-        +         "console && console.error && console.error(msg);"
-        +     "}"
+        + "if (typeof console !== 'undefined') {"
+        + "console && console.error && console.error(msg);"
+        + "}"
         + "};"
         + "if (!echarts) {"
-        +     "log('ECharts is not Loaded');"
-        +     "return;"
+        + "log('ECharts is not Loaded');"
+        + "return;"
         + "}"
         + "if (!echarts.registerMap) {"
-        +     "log('ECharts Map is not loaded');"
-        +     "return;"
+        + "log('ECharts Map is not loaded');"
+        + "return;"
         + "}"
         + "echarts.registerMap('" + mapName + "', "
         + JSON.stringify(geojson) + ");}));";
@@ -387,27 +371,27 @@ function compress(json) {
 
     var features = json.features;
     if (!features) {
-    return;
+        return;
     }
-    features.forEach(function (feature){
-    var encodeOffsets = feature.geometry.encodeOffsets = [];
-    var coordinates = feature.geometry.coordinates;
-    if (feature.geometry.type === 'Polygon') {
-        coordinates.forEach(function (coordinate, idx){
-            coordinates[idx] = encodePolygon(
-                coordinate, encodeOffsets[idx] = []
-            );
-        });
-    } else if(feature.geometry.type === 'MultiPolygon') {
-        coordinates.forEach(function (polygon, idx1){
-            encodeOffsets[idx1] = [];
-            polygon.forEach(function (coordinate, idx2) {
-                coordinates[idx1][idx2] = encodePolygon(
-                    coordinate, encodeOffsets[idx1][idx2] = []
+    features.forEach(function (feature) {
+        var encodeOffsets = feature.geometry.encodeOffsets = [];
+        var coordinates = feature.geometry.coordinates;
+        if (feature.geometry.type === 'Polygon') {
+            coordinates.forEach(function (coordinate, idx) {
+                coordinates[idx] = encodePolygon(
+                    coordinate, encodeOffsets[idx] = []
                 );
             });
-        });
-    }
+        } else if (feature.geometry.type === 'MultiPolygon') {
+            coordinates.forEach(function (polygon, idx1) {
+                encodeOffsets[idx1] = [];
+                polygon.forEach(function (coordinate, idx2) {
+                    coordinates[idx1][idx2] = encodePolygon(
+                        coordinate, encodeOffsets[idx1][idx2] = []
+                    );
+                });
+            });
+        }
     });
 
     return json;
@@ -425,13 +409,12 @@ function encodePolygon(coordinate, encodeOffsets) {
 
     for (var i = 0; i < coordinate.length; i++) {
         var point = coordinate[i];
-        result+=encode(point[0], prevX);
-        result+=encode(point[1], prevY);
+        result += encode(point[0], prevX);
+        result += encode(point[1], prevY);
 
         prevX = quantize(point[0]);
         prevY = quantize(point[1]);
     }
-
     return result;
 }
 
@@ -439,7 +422,7 @@ function quantize(val) {
     return Math.ceil(val * 1024);
 }
 
-function encode(val, prev){
+function encode(val, prev) {
     // Quantization
     val = quantize(val);
     // var tmp = val;
@@ -453,7 +436,7 @@ function encode(val, prev){
     // ZigZag
     val = (val << 1) ^ (val >> 15);
     // add offset and get unicode
-    return String.fromCharCode(val+64);
+    return String.fromCharCode(val + 64);
     // var tmp = {'tmp' : str};
     // try{
     //     eval("(" + JSON.stringify(tmp) + ")");
