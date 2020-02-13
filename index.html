@@ -433,6 +433,13 @@
         function preview(data) {
 
             if (downindex > 0) {
+                console.log("保存文件名:" + fileStr + " 当前数组内容：" + provinceList[downindex - 1]);
+                if (data.features.length > 0) {
+                    for (var tt = 0; tt < data.features.length; tt++) {
+                        console.log(data.features[tt].properties.name);
+                    }
+                }
+
                 downloadGeoJson(data);
                 downindex++;
                 set_select_checked();
@@ -474,15 +481,13 @@
             });
         }
 
-        $('#province').change();
-
         function set_select_checked() {
             if (downindex > provinceList.length) {
                 return;
             }
             let checkValue = provinceList[downindex - 1];
             var select = document.getElementById("province");
-            console.log(checkValue + provinceList.length + " : " + downindex);
+            //   console.log(checkValue + provinceList.length + " : " + downindex);
             for (var i = 0; i < select.options.length; i++) {
                 if (select.options[i].text == checkValue) {
                     select.options[i].selected = true;
@@ -495,8 +500,8 @@
         $('#startDownJSON').click(startDownJSON);
         var downindex = 0;
         function startDownJSON() {
-            alert("功能暂时关闭");
-            return;
+            //    alert("功能暂时关闭");
+            //    return;
             downindex = 1;
             set_select_checked();
         }
